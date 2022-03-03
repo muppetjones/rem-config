@@ -1,0 +1,6 @@
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# MUST come after brew shell env
+[ -r ~/.bashrc ] && . ~/.bashrc
+
+. "$HOME/.cargo/env"

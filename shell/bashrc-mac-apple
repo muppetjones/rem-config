@@ -1,0 +1,479 @@
+
+# set architecture flags
+export ARCHFLAGS="-arch arm64"
+
+#
+# This .bashrc taken in part from
+# http://tldp.org/LDP/abs/html/sample-bashrc.html
+
+
+# Test for an interactive shell.  There is no need to set anything
+# past this point for scp and rcp, and it's important to refrain from
+# outputting anything in those cases.
+if [[ $- != *i* ]] ; then
+  # Shell is non-interactive.  Be done now!
+  return
+fi
+
+#-------------------------------------------------------------
+# Source global definitions (if any)
+#-------------------------------------------------------------
+
+if [ -f /etc/bashrc ]; then
+  . /etc/bashrc   # --> Read /etc/bashrc, if present.
+fi
+
+#--------------------------------------------------------------
+#  Automatic setting of $DISPLAY (if not set already).
+#  This works for me - your mileage may vary. . . .
+#  The problem is that different types of terminals give
+#+ different answers to 'who am i' (rxvt in particular can be
+#+ troublesome) - however this code seems to work in a majority
+#+ of cases.
+#--------------------------------------------------------------
+
+function get_xserver ()
+{
+  case $TERM in
+    xterm )
+      XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' )
+      # Ane-Pieter Wieringa suggests the following alternative:
+      #  I_AM=$(who am i)
+      #  SERVER=${I_AM#*(}
+      #  SERVER=${SERVER%*)}
+      XSERVER=${XSERVER%%:*}
+    ;;
+    aterm | rxvt)
+      # Find some code that works here. ...
+    ;;
+  esac
+}
+
+if [ -z ${DISPLAY:=""} ]; then
+  get_xserver
+  if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
+    ${XSERVER} == "unix" ]]; then
+    DISPLAY=":0.0"          # Display on local host.
+  else
+    DISPLAY=${XSERVER}:0.0     # Display on remote host.
+  fi
+fi
+
+export DISPLAY
+
+#-------------------------------------------------------------
+# Homebrew
+# (largely setup in bash_profile via "brew shellenv")
+#-------------------------------------------------------------
+
+# prevent unwanted updates
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+# enable bash completion
+# -- install via `brew install bash-completion`
+# -- git completion?
+if [ -f "${HOMEBREW_PREFIX}/etc/bash_completion" ]; then
+  # shellcheck source=/usr/lib/etc/bash_completion
+  . "${HOMEBREW_PREFIX}/etc/bash_completion"
+fi
+
+#-------------------------------------------------------------
+# Python Virtualenv
+#-------------------------------------------------------------
+
+function activate {
+  # shellcheck source=venv/py3.4/bin/activate
+  source "${HOME}/venv/$1/bin/activate"
+}
+
+export PIP_REQUIRE_VIRTUALENV=true
+export PIP_DOWNLOAD_CACHE=${HOME}/.pip/cache
+syspip2(){
+  PIP_REQUIRE_VIRTUALENV="" "${HOMEBREW_PREFIX}"/bin/pip2 "$@"
+}
+syspip3(){
+  PIP_REQUIRE_VIRTUALENV="" "${HOMEBREW_PREFIX}"/bin/pip3 "$@"
+}
+
+#-------------------------------------------------------------
+# Git
+#-------------------------------------------------------------
+
+source "${HOMEBREW_PREFIX}"/etc/bash_completion.d/git-completion.bash
+source "${HOMEBREW_PREFIX}"/etc/bash_completion.d/git-prompt.sh
+
+export GIT_PS1_SHOWDIRTYSTATE=true
+export GIT_PS1_SHOWUNTRACKEDFILES=true
+
+# export gpg keyq
+export GPG_TTY=$(tty)
+
+#-------------------------------------------------------------
+# History, etc.
+#-------------------------------------------------------------
+
+export TIMEFORMAT=$'\nreal %3R\tuser %3U\tsys %3S\tpcpu %P\n'
+export HISTIGNORE=" &:bg:fg:ll:h"
+export HISTTIMEFORMAT="$(echo -e ${BCyan})[%d/%m %H:%M:%S]$(echo -e ${NC}) "
+export HISTCONTROL=ignoredups
+export HOSTFILE=$HOME/.hosts    # Put a list of remote hosts in ~/.hosts
+export HISTFILESIZE=5000000
+
+# save commands across terminals
+shopt -s histappend
+PROMPT_COMMAND=`history -a`
+
+#-------------------------------------------------------------
+# Colors
+#-------------------------------------------------------------
+
+# Color definitions (taken from Color Bash Prompt HowTo).
+# Some colors might look different of some terminals.
+# For example, I see 'Bold Red' as 'orange' on my screen,
+# hence the 'Green' 'BRed' 'Red' sequence I often use in my prompt.
+
+# High Intensty
+Black='\[\033[0;90m\]'
+Red='\[\033[0;91m\]'
+Green='\[\033[0;92m\]'
+Yellow='\[\033[0;93m\]'
+Blue='\[\033[0;94m\]'
+Purple='\[\033[0;95m\]'
+Cyan='\[\033[0;96m\]'
+White='\[\033[0;97m\]'
+
+BBlack='\[\033[1;90m\]'
+BRed='\[\033[1;91m\]'
+BGreen='\[\033[1;92m\]'
+BYellow='\[\033[1;93m\]'
+BBlue='\[\033[1;94m\]'
+BPurple='\[\033[1;95m\]'
+BCyan='\[\033[1;96m\]'
+BWhite='\[\033[1;97m\]'
+
+# Background
+BgBlack='\[\033[40m\]'
+BgRed='\[\033[41m\]'
+BgGreen='\[\033[42m\]'
+BgYellow='\[\033[43m\]'
+BgBlue='\[\033[44m\]'
+BgPurple='\[\033[45m\]'
+BgCyan='\[\033[46m\]'
+BgWhite='\[\033[47m\]'
+
+#Replace any leading leading 0; with 1; for bold colors
+#Replace any leading 0; with 4; to underline
+
+NC="\[\033[0m\]"               # Color Reset
+ALERT=${White}${BgRed} # Bold White on red background
+
+#-------------------------------------------------------------
+# Prompt
+#-------------------------------------------------------------
+
+#-------------------------------------------------------------
+# Shell Prompt - for many examples, see:
+#       http://www.debian-administration.org/articles/205
+#       http://www.askapache.com/linux/bash-power-prompt.html
+#       http://tldp.org/HOWTO/Bash-Prompt-HOWTO
+#       https://github.com/nojhan/liquidprompt
+#-------------------------------------------------------------
+# Current Format: [USER@HOST PWD] (GIT)
+#    [TIME #JOBS] $
+# TIME:
+#    Green     == machine load is low
+#    Orange    == machine load is medium
+#    Red       == machine load is high
+#    ALERT     == machine load is very high
+# USER:
+#    Cyan      == normal user
+#    Orange    == SU to user
+#    Red       == root
+# HOST:
+#    Cyan      == local session
+#    Green     == secured remote connection (via ssh)
+#    Red       == unsecured remote connection
+# PWD:
+#    Green     == more than 10% free disk space
+#    Orange    == less than 10% free disk space
+#    ALERT     == less than 5% free disk space
+#    Red       == current user does not have write privileges
+#    Cyan      == current filesystem is size zero (like /proc)
+# $:
+#    White     == no background or suspended jobs in this shell
+#    Cyan      == at least one background job in this shell
+#    Orange    == at least one suspended job in this shell
+#
+#    Command is added to the history file each time you hit enter,
+#    so it's available to all shells (using 'history -a').
+
+
+# Test connection type:
+if [ -n "${SSH_CONNECTION}" ]; then
+  CNX=${Green}        # Connected on remote machine, via ssh (good).
+  #elif [[ "${DISPLAY%%:0*}" != "" ]]; then
+  #    CNX=${ALERT}        # Connected on remote machine, not via ssh (bad).
+else
+  CNX=${Yellow}        # Connected on local machine.
+fi
+
+# Test user type:
+if [[ ${USER} == "root" ]]; then
+  SU=${Red}           # User is root.
+  elif [[ ${USER} != $(logname) ]]; then
+  SU=${BRed}          # User is not login user.
+else
+  SU=${BGreen}         # User is normal (well ... most of us are).
+fi
+
+# Returns a color according to free disk space in $PWD.
+function disk_color()
+{
+  if [ ! -w "${PWD}" ] ; then
+    echo -en ${Red}
+    # No 'write' privilege in the current directory.
+    elif [ -s "${PWD}" ] ; then
+    local used=$(command df -P "$PWD" |
+    awk 'END {print $5} {sub(/%/,"")}')
+    if [ ${used} -gt 95 ]; then
+      echo -en ${ALERT}           # Disk almost full (>95%).
+      elif [ ${used} -gt 90 ]; then
+      echo -en ${BRed}            # Free disk space almost gone.
+    else
+      echo -en ${Green}           # Free disk space is ok.
+    fi
+  else
+    echo -en ${Cyan}
+    # Current directory is size '0' (like /proc, /sys etc).
+  fi
+}
+
+# Adds some text in the terminal frame (if applicable).
+__venv_ps1() {
+  if ! [ -z "${VIRTUAL_ENV}" ]
+  then
+    printf -- "(%s) " "$(basename ${VIRTUAL_ENV})";
+  fi
+}
+# export -f __venv_ps1
+
+# fix to correctly show virtual environment in prompt
+#show_virtual_env() {
+#  if [ -n "$VIRTUAL_ENV" ]; then
+#    echo "($(basename $VIRTUAL_ENV)) "
+#  fi
+#}
+#export -f show_virtual_env
+
+# Now we construct the prompt.
+PROMPT_COMMAND="history -a"
+case ${TERM} in
+  *term* | rxvt | linux)
+    # venv info
+    # PS1='$(show_virtual_env)'
+    PS1='$(declare -F __venv_ps1 &>/dev/null)'
+    # && __venv_ps1)'
+    # User@Host (with connection type info):
+    PS1=${PS1}"[${SU}\u${NC}@${CNX}\h${NC} "
+    # PWD (with 'disk space' info):
+    PS1=${PS1}"${Yellow}\w${NC}]"
+    # Add git branch information (if available)
+    PS1=${PS1}' $(declare -F __git_ps1 &>/dev/null && __git_ps1 " (%s)")\n'
+    # Prompt (with 'job' info):
+    PS1=${PS1}"[${Yellow}\D{%d.%m.%Y} \t ${BGreen}\#${NC}]"
+    PS1=${PS1}"${NC}$ "
+
+    # Set title of current xterm:
+    #PS1=${PS1}"${NC}[\u@\h] \w\a\]"
+  ;;
+  *)
+    PS1="(\A \u@\h \W) > " # --> PS1="(\A \u@\h \w) > "
+    # --> Shows full pathname of current dir.
+  ;;
+esac
+
+#-------------------
+# Personnal Aliases
+#-------------------
+
+function common_commands {
+  history | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl |  head -n10
+}
+
+function docker_clean {
+   docker rmi $(docker images | grep "^<none>" | awk "{print $3}")
+}
+
+alias ssh='ssh -Y'
+
+alias utest='python -m unittest -v'
+alias dtest='python -m unittest discover -v'
+alias ptest='pytest -vvv -s'
+
+function ptest-cov {
+   _args=()
+   _path=
+   _mod=
+   for _arg in "$@"
+   do
+      if [ -f "${_arg}" ]
+      then
+         _mod="${_arg##*tests\/unit/}"
+         _path="$(realpath "$_arg")"
+         _mod="${_mod//test_/}"
+         _mod="${_mod%%.py}"
+         _mod="${_mod//\//.}"
+         _mod="${_mod//-/_}"
+      else
+         _args+=($_arg)
+      fi
+   done
+   set -x
+   python -m pytest -vvv \
+	--cov-report term \
+   --cov-report term-missing \
+   --cov="${_mod}" \
+   --cov-branch \
+   ${_args[@]} "${_path}"
+   set +x
+}
+
+#
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+# -> Prevents accidentally clobbering files.
+alias mkdir='mkdir -p'
+
+alias h='history'
+alias j='jobs -l'
+alias which='type -a'
+alias ..='cd ..'
+
+# Pretty-print of some PATH variables:
+alias path='echo -e ${PATH//:/\\n}'
+alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'
+
+alias du='du -kh'    # Makes a more readable output.
+alias df='df -kh'
+
+alias aws-ecr-login='eval $(aws ecr get-login --no-include-email --region us-west-2)'
+alias aws-ttt-token='eval $(ttt aws-refresh load tempus-science-stephen-bush)'
+function npm_install {
+  npm install -g $1
+  npm link $1
+}
+
+#-------------------------------------------------------------
+# The 'ls' family (this assumes you use a recent GNU ls).
+#-------------------------------------------------------------
+# Add colors for filetype and  human-readable sizes by default on 'ls':
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
+alias ls='ls -h -GpF'
+alias lx='ls -lXB'         #  Sort by extension.
+alias lk='ls -lSr'         #  Sort by size, biggest last.
+alias lt='ls -ltr'         #  Sort by date, most recent last.
+alias lc='ls -ltcr'        #  Sort by/show change time,most recent last.
+alias lu='ls -ltur'        #  Sort by/show access time,most recent last.
+
+# The ubiquitous 'll': directories first, with alphanumeric sorting:
+#alias ll="ls -lv --group-directories-first"
+#alias ll='ls -la | grep "^d" && ls -la | grep "^-" && ls -la | grep -v -E "^d|^-|^total"'
+#alias ll='ls -la | grep "^d" && ls -la | grep "^-" && ls -la | grep -E "^d|^-" -v | grep -v "^total"'
+alias ll='ls -lv'
+alias lm='ll |more'        #  Pipe through 'more'
+alias lr='ll -R'           #  Recursive ls.
+alias la='ll -A'           #  Show hidden files.
+alias tree='tree -Csuh'    #  Nice alternative to 'recursive ls' ...
+
+
+#-------------------------------------------------------------
+# Tailoring 'less'
+#-------------------------------------------------------------
+
+alias more='less'
+export PAGER=less
+export LESSCHARSET='latin1'
+export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
+# Use this if lesspipe.sh exists.
+export LESS='-i -N -w  -z-4 -g -e -M -X -F -R -P%t?f%f \
+:stdin .?pb%pb\%:?lbLine %lb:?bbByte %bb:-...'
+
+# LESS man page colors (makes Man pages more readable).
+export LESS_TERMCAP_mb=$'\033[01;31m'
+export LESS_TERMCAP_md=$'\033[01;31m'
+export LESS_TERMCAP_me=$'\033[0m'
+export LESS_TERMCAP_se=$'\033[0m'
+export LESS_TERMCAP_so=$'\033[01;44;33m'
+export LESS_TERMCAP_ue=$'\033[0m'
+export LESS_TERMCAP_us=$'\033[01;32m'
+
+
+#-------------------------------------------------------------
+# Greeting, motd etc. ...
+#-------------------------------------------------------------
+
+# echo $'\[\033[1;95m\]'
+echo ''
+fortune
+echo ''
+#echo $'\[\033[0m\]'
+
+#-------------------------------------------------------------
+# PATH modifications
+#-------------------------------------------------------------
+
+# see homebrew section above
+
+#if [[ "${PYTHONPATH}" != *"/dev/pipeline/"* ]]
+#then
+#   PYTHONPATH=${HOME}/dev/pipeline/apps:${HOME}/dev/pipeline/python:${PYTHONPATH}
+#   #PYTHONPATH=${HOME}/dev/bioinf-bili:${HOME}/dev/bioinf-locutus:${PYTHONPATH}
+#fi
+
+export PATH
+export PYTHONPATH
+
+#-------------------------------------------------------------
+# Direnv
+#-------------------------------------------------------------
+
+#eval "$(direnv hook bash)"
+source ~/.autoenv/activate.sh
+export AUTOENV_ENABLE_LEAVE="goodbye"
+
+#-------------------------------------------------------------
+# Fun
+#-------------------------------------------------------------
+
+
+function flip {
+    echo;
+    echo -ne " (\\º¬º)\\   ┬─┬\r"; sleep .3;
+    echo -ne "  (\\º¬º)\\  ┬─┬\r"; sleep .3;
+    echo -ne "   (\\º∞º)\\ ┬─┬\r"; sleep .3;
+    echo -ne "   (\\ºДº)\\ ┬─┬\r"; sleep .2;
+    echo -ne "   (-'Д')-  ┬─┬\r"; sleep .2;
+    echo -ne "   (╯'□')╯    ]\r"; sleep .2;
+    echo -ne "   (╯°□°)╯  ︵  ┻━┻\r"; sleep .2;
+    echo -ne "   (╯°□°)╯       [\r"; sleep .2;
+    echo -ne "   (╯°□°)╯       ︵  ┬─┬\r"; sleep .2;
+    echo -ne "   (╯°□°)╯                 ]\r"; sleep .2;
+    echo -ne "   (╯°□°)╯                ︵  ┻━┻\r"; sleep .2;
+    echo -ne "   (╯°□°)╯                         [\r"; sleep .2;
+    echo -ne "   (\\°-°)\\                            ︵  ┬─┬\r"; sleep .2;
+    echo -ne "   (\\°-°)\\                                     ]\r"; sleep .2;
+    echo -ne "   (\\°-°)\\                                     ︵ ┻━┻\r"; sleep .2;
+    echo -ne "   (\\°-°)\\                                              [\r"; sleep .2;
+    echo -ne "   (\\°-°)\\                                              ︵ ┬─┬ \r"; sleep .2;
+    echo -ne "   (\\°-°)\\                                                    ]\r"; sleep .4;
+    echo -ne "   (\\°-°)\\                                                      ⤢\r"; sleep .4;
+    echo -ne "   (\\°-°)\\                                                    ︵┻━┻ \r"; sleep .2;
+    echo     "   (\\°◞°)\\                                                      ┻━┻ "; sleep .55555;
+}
+
+# export NVM_DIR="$HOME/.nvm"
+# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+export PATH="${HOME}/.local/bin${PATH+:$PATH}"
