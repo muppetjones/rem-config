@@ -1,6 +1,34 @@
 # rem-config
 Configuration files for various tools and software
 
+## Python
+
+### black
+
+```shell
+ln -s $(pwd)/python/black ~/.config/
+```
+
+### flake8
+
+```shell
+ln -s $(pwd)/python/flake8 ~/.config/
+```
+
+### isort
+
+```shell
+ln -s $(pwd)/python/isort ~/.isort.cfg
+```
+
+### Scripts
+
+```shell
+mkdir -p ~/.local/bin
+ln -s $(pwd)/python/pydir.py ~/.local/bin/pydir
+ln -s $(pwd)/python/mkvenv.py ~/.local/bin/mkvenv
+```
+
 ## Shell
 
 Most of this configuration assumes you're using BASH.

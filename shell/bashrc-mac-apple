@@ -89,10 +89,10 @@ function activate {
 export PIP_REQUIRE_VIRTUALENV=true
 export PIP_DOWNLOAD_CACHE=${HOME}/.pip/cache
 syspip2(){
-  PIP_REQUIRE_VIRTUALENV="" "${HOMEBREW_PREFIX}"/bin/pip2 "$@"
+  PIP_REQUIRE_VIRTUALENV="" /usr/bin/python2 -m pip "$@"
 }
 syspip3(){
-  PIP_REQUIRE_VIRTUALENV="" "${HOMEBREW_PREFIX}"/bin/pip3 "$@"
+  PIP_REQUIRE_VIRTUALENV="" /usr/bin/python3 -m pip "$@"
 }
 
 #-------------------------------------------------------------
