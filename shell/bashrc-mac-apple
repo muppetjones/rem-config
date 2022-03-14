@@ -439,9 +439,10 @@ export PYTHONPATH
 # Direnv
 #-------------------------------------------------------------
 
-#eval "$(direnv hook bash)"
-source ~/.autoenv/activate.sh
-export AUTOENV_ENABLE_LEAVE="goodbye"
+# Moved to profile
+# eval "$(direnv hook bash)"
+# source /activate.sh
+# export AUTOENV_ENABLE_LEAVE="goodbye"
 
 #-------------------------------------------------------------
 # Fun
