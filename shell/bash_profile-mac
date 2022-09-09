@@ -10,3 +10,6 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # autoenv
 source $(brew --prefix autoenv)/activate.sh
 export AUTOENV_ENABLE_LEAVE="goodbye"
+export PATH="/opt/homebrew/opt/avr-gcc@8/bin:$PATH"
+export PATH="/opt/homebrew/opt/arm-gcc-bin@8/bin:$PATH"
+export PATH="/opt/homebrew/opt/ccache/libexec:$PATH"
