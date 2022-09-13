@@ -118,6 +118,7 @@ export HISTTIMEFORMAT="$(echo -e ${BCyan})[%d/%m %H:%M:%S]$(echo -e ${NC}) "
 export HISTCONTROL=ignoredups
 export HOSTFILE=$HOME/.hosts    # Put a list of remote hosts in ~/.hosts
 export HISTFILESIZE=5000000
+export HISTSIZE=5000000
 
 # save commands across terminals
 shopt -s histappend

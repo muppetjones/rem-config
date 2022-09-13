@@ -270,13 +270,16 @@ def run():
         import locutus  # type: ignore
 
         locutus.config_from_argv(
-            default={"level": logging.DEBUG, "formatter": "color"}
+            defaults={"level": logging.DEBUG, "formatter": "color"}
         )
     except ImportError:  # pragma: no cover
         logging.basicConfig(
             format='%(asctime)s %(levelname)s %(name)s:%(lineno)s %(message)s',
             level=logging.DEBUG,
         )
+    except Exception as err:
+        logging.root.exception(locutus.__file__)
+        raise
 
     main()
 
