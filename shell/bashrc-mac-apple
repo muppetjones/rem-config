@@ -297,6 +297,33 @@ esac
 # Personnal Aliases
 #-------------------
 
+# remove git branches that do not exist on the remote
+# run with -d or -D
+function git-local {
+  git fetch -p  # remove remote tracking references that no longer exist
+  if [[ $# -eq 0 ]] ; then
+    git branch -r | awk '{print $1}' | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk '{print $1}'
+  else
+    set -x
+    git branch -r | awk '{print $1}' | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk '{print $1}' | xargs git branch "$@"
+    set +x
+  fi
+}
+
+function git-merged {
+  branch=$(git branch --show-current)
+  # git checkout main && git pull && git checkout $branch
+  git fetch --all
+  if [[ $# -eq 0 ]] ; then
+    git branch --merged main | egrep -v '(main|master|dev.*)$' | grep -v 'release/|hotfix/' | egrep -v '^ ?\* '
+  else
+    # git branch --merged main | grep -v '^[ *]*main$' | xargs git branch -d
+    set -x
+    git branch --merged main | egrep -v '(main|master|dev.*)$' | grep -v 'release/|hotfix/' | egrep -v '^ ?\* ' | xargs git branch "$@"
+    set +x
+  fi
+}
+
 function common_commands {
   history | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl |  head -n10
 }
