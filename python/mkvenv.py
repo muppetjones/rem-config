@@ -70,7 +70,7 @@ def add_autoenv_binding(
 def _add_autoenv_binding_to_activate_venv(
     name: str, location: Path, logger: logging.Logger
 ) -> None:
-    entry = f"source {location}/{name}"
+    entry = f"source {location}/{name}/bin/activate"
     rx = re.compile(r"^(activate|source)\s+.+$", re.MULTILINE)
     path = Path(".env")
     content = path.read_text() if path.exists() else ""
@@ -80,15 +80,18 @@ def _add_autoenv_binding_to_activate_venv(
             logger.info("Found matching autoenv entry. No change applied.")
             return  # no change -- don't bother user
         logger.warning("Found existing autoenv entry:\n\n\t%s\n", match_str)
-        response = input(f'Replace existing entry? (n/Y)  ')
-        if "Y" != response:
+        response = input(f'Replace existing entry? (y/N)  ')
+        if "y" != response.lower().strip():
+            logger.info("will not replace")
             return  # do not replace
-        content.replace(match_str, f"source {location}/{name}")
+        content = content.replace(match_str, entry)
         path.write_text(content.lstrip())
+        logger.info('Updated entry in "%s": "%s" ', path, entry)
     else:
-        lines = "\n\n# Activate venv upon entering the directory\n{entry}\n"
+        lines = f"\n\n# Activate venv upon entering the directory\n{entry}\n"
         content = content.rstrip() + lines
         path.write_text(content.lstrip())
+        logger.info('Added "activate" to "%s"', path)
 
 
 def _add_autoenv_binding_to_deactivate_venv(logger: logging.Logger) -> None:
@@ -99,11 +102,11 @@ def _add_autoenv_binding_to_deactivate_venv(logger: logging.Logger) -> None:
     lines = [
         "",
         "# deactivate venv when leaving",
-        "deactivate",
+        "deactivate 1> /dev/null",
     ]
     content = content.rstrip() + "\n".join(lines)
     path.write_text(content.lstrip())
-
+    logger.info('Added "deactivate" to "%s"', path)
 
 def create_venv(
     name: str, location: Path, exec_path: Path, logger: logging.Logger = None

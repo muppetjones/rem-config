@@ -159,7 +159,7 @@ def run():
         import locutus  # type: ignore
 
         locutus.config_from_argv(
-            default={"level": logging.DEBUG, "formatter": "color"}
+            defaults={"level": logging.DEBUG, "formatter": "color"}
         )
     except ImportError:  # pragma: no cover
         logging.basicConfig(
