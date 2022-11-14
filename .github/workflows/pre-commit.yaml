@@ -1,0 +1,25 @@
+name: PreCommit
+on: [pull_request]
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Cache python
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml') }}
+      - name: Cache pre-commit
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ env.pythonLocation }}-pre-commit
+      - name: Install packages
+        run: pip install pre-commit
+      - name: Run pre-commit
+        run: pre-commit run --all-files --hook-stage manual
