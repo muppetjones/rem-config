@@ -297,6 +297,16 @@ esac
 # Personnal Aliases
 #-------------------
 
+function ipykernel-create {
+  python -m ipykernel install --user --name=$1
+}
+
+function sfind {
+ find 2>&1 $@ | { grep -v 'Permission denied' >&2; [ $? -eq 1 ]; }
+
+}
+
+
 # remove git branches that do not exist on the remote
 # run with -d or -D
 function git-local {

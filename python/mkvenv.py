@@ -64,13 +64,14 @@ def add_autoenv_binding(
 ) -> None:
     logger = logger or LOGGER
     _add_autoenv_binding_to_activate_venv(name, location, logger)
-    _add_autoenv_binding_to_deactivate_venv(logger)
+    # NOTE: Added deactivate to env
+    # _add_autoenv_binding_to_deactivate_venv(logger)
 
 
 def _add_autoenv_binding_to_activate_venv(
     name: str, location: Path, logger: logging.Logger
 ) -> None:
-    entry = f"source {location}/{name}/bin/activate"
+    entry = f"deactivate 1> /dev/null\nsource {location}/{name}/bin/activate"
     rx = re.compile(r"^(activate|source)\s+.+$", re.MULTILINE)
     path = Path(".env")
     content = path.read_text() if path.exists() else ""
