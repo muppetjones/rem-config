@@ -20,6 +20,7 @@ Thumbs.db
 venv
 node_modules
 .sass-cache
+tools/karabiner/automatic_backups
 
 # Secrets, etc
 .env*

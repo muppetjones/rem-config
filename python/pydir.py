@@ -63,9 +63,9 @@ def make_dirs(*targets: Path) -> None:
 
 def make_init_files(*targets: Path, logger: logging.Logger = None) -> None:
     logger = logger or LOGGER
+    allowed_parents = [Path.cwd(), ]  # Path.home()]
     targets = [p.resolve() for p in targets]
-    common_prefix = Path(os.path.commonprefix(targets))
-    allowed_parents = (Path.home(), Path.cwd())
+    common_prefix = Path(os.path.commonprefix(allowed_parents + targets))
     if not any(common_prefix.is_relative_to(x) for x in allowed_parents):
         raise ValueError(f"targets must be within allowed dir: {allowed_parents}")
 
@@ -90,6 +90,7 @@ def make_init_files(*targets: Path, logger: logging.Logger = None) -> None:
     for path in paths:
         path.touch()
     logger.info("Touched %d __init__.py files", len(paths))
+    logger.debug(pformat(paths))
     if paths:
         logger.debug("\n  %s", "\n  ".join(str(x) for x in paths))
 
