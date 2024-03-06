@@ -297,6 +297,12 @@ esac
 # Personnal Aliases
 #-------------------
 
+function cr-rm {
+  sed 's/\r$//' $1 > ${1}.b
+  mv -f ${1}.b $1
+  cat -v $1 | head -n 1
+}
+
 function ipykernel-create {
   python -m ipykernel install --user --name=$1
 }
@@ -408,7 +414,7 @@ function npm_install {
 # Add colors for filetype and  human-readable sizes by default on 'ls':
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
-alias ls='ls -h -GpF'
+alias ls="ls -h -GpF -D '%Y-%m-%d %H:%M'"
 alias lx='ls -lXB'         #  Sort by extension.
 alias lk='ls -lSr'         #  Sort by size, biggest last.
 alias lt='ls -ltr'         #  Sort by date, most recent last.

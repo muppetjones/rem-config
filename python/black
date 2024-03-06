@@ -1,4 +1,4 @@
 [tool.black]
-line-length = 83
+line-length = 88
 target-version = ["py38", "py39", "py310"]
-skip-string-normalization = true
+# skip-string-normalization = true
